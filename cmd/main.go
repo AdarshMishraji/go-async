@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/AdarshMishrji/go-async/pkg/promise"
+	"github.com/AdarshMishraji/go-async/pkg/promise"
 )
 
 var (
