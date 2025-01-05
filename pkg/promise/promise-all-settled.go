@@ -2,27 +2,22 @@ package promise
 
 import "sync"
 
-type Result struct {
-	Value any
-	Err   error
-}
+func PromiseAllSettled(promises ...*Promise) []Result {
+	length := len(promises)
+	responses := make([]Result, length)
 
-func PromiseAllSettled(functions ...func() (any, error)) ([]Result, error) {
-	noOfFunctions := len(functions)
 	var wg sync.WaitGroup
-	responses := make([]Result, noOfFunctions)
 
-	for index, function := range functions {
+	for index, promise := range promises {
 		wg.Add(1)
-
-		go func(index int, function func() (any, error)) {
+		go func(index int, promise *Promise) {
 			defer wg.Done()
-			res, err := function()
+			res, err := promise.Await()
 			responses[index] = Result{res, err}
-		}(index, function)
+		}(index, promise)
 	}
 
 	wg.Wait()
 
-	return responses, nil
+	return responses
 }

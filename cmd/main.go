@@ -8,23 +8,36 @@ import (
 	"github.com/AdarshMishrji/go-async/pkg/promise"
 )
 
-func promise1() (any, error) {
-	time.Sleep(1 * time.Second)
-	println("[INTERNAL] resolved promise1")
-	return 1, nil
-}
-func promise2() (any, error) {
-	time.Sleep(2 * time.Second)
-	println("[INTERNAL] resolved promise2")
-	return nil, errors.New("promise 2 error")
-}
-func promise3() (any, error) {
-	time.Sleep(3 * time.Second)
-	println("[INTERNAL] resolved promise3")
-	return 3, nil
-}
+var (
+	promise1 = promise.New(func(resolve func(any), reject func(error)) {
+		time.Sleep(1 * time.Second)
+		println("[INTERNAL] resolved promise1")
+		resolve(1)
+	})
+	promise2 = promise.New(func(resolve func(any), reject func(error)) {
+		time.Sleep(2 * time.Second)
+		println("[INTERNAL] resolved promise2")
+		reject(errors.New("some error"))
+	})
+	promise3 = promise.New(func(resolve func(any), reject func(error)) {
+		time.Sleep(3 * time.Second)
+		println("[INTERNAL] resolved promise3")
+		resolve(3)
+	})
+)
 
 func main() {
+	res, err := promise.New(func(resolve func(any), reject func(error)) {
+		resolve(promise1)
+	}).Then(func(data any) any {
+		fmt.Printf("Data: %+v\n", data)
+		return promise2
+	}).Finally(func() {
+		println("Finally")
+	})
+	fmt.Printf("Res: %+v\n", res)
+	fmt.Printf("Err: %+v\n", err)
+
 	println("*************** ALL ********************")
 	resAll, err := promise.PromiseAll(promise1, promise2, promise3)
 	if err != nil {
@@ -36,14 +49,9 @@ func main() {
 	}
 
 	println("*************** ALL Settled ********************")
-	resAllSettled, err := promise.PromiseAllSettled(promise1, promise2, promise3)
-	if err != nil {
-		println(err.Error())
-	} else {
-		println(len(resAllSettled))
-		for _, val := range resAllSettled {
-			fmt.Printf("Struct: %+v\n", val) // Prints field names and values
-		}
+	resAllSettled := promise.PromiseAllSettled(promise1, promise2, promise3)
+	for _, val := range resAllSettled {
+		fmt.Printf("Struct: %+v\n", val) // Prints field names and values
 	}
 
 	println("*************** Race ********************")
@@ -55,5 +63,5 @@ func main() {
 	}
 
 	time.Sleep(5 * time.Second) // waiting to see all the internal logs of promises
-	println("exited")
+	// println("exited")
 }

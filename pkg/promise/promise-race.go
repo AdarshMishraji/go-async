@@ -1,27 +1,26 @@
 package promise
 
-func PromiseRace(functions ...func() (any, error)) (any, error) {
-	resultCh := make(chan Result)
+func PromiseRace(promises ...*Promise) (any, error) {
+	responseChan := make(chan *Result)
 
-	for _, function := range functions {
-		go func(fn func() (any, error)) {
+	for _, promise := range promises {
+		go func(promise *Promise) {
 			select {
-			case <-resultCh:
+			case <-responseChan:
 				return
 			default:
-				res, err := fn()
+				res, err := promise.Await()
 				select {
-				case <-resultCh:
+				case <-responseChan:
 					return
 				default:
-					resultCh <- Result{res, err}
-					close(resultCh)
+					responseChan <- &Result{res, err}
+					close(responseChan)
 				}
 			}
-		}(function)
+		}(promise)
 	}
 
-	// Receive the first result or error
-	res := <-resultCh
-	return res.Value, res.Err
+	result := <-responseChan
+	return result.Value, result.Err
 }
