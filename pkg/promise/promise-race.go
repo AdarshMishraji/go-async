@@ -5,10 +5,18 @@ func PromiseRace(functions ...func() (any, error)) (any, error) {
 
 	for _, function := range functions {
 		go func(fn func() (any, error)) {
-			res, err := fn()
 			select {
-			case resultCh <- Result{res, err}:
+			case <-resultCh:
+				return
 			default:
+				res, err := fn()
+				select {
+				case <-resultCh:
+					return
+				default:
+					resultCh <- Result{res, err}
+					close(resultCh)
+				}
 			}
 		}(function)
 	}

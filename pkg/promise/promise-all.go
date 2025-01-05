@@ -96,7 +96,12 @@ func PromiseAll(functions ...func() (any, error)) ([]any, error) {
 					// After sending the error, close the channel to signal all other tasks.
 					close(errChan)
 				} else {
-					responses[index] = res
+					select {
+					case <-errChan:
+						return
+					default:
+						responses[index] = res
+					}
 				}
 			}
 		}(index, function)
@@ -119,6 +124,9 @@ func PromiseAll(functions ...func() (any, error)) ([]any, error) {
 		// Note: Once errCh is closed, reading from it again
 		// returns zero-value (nil) + ok=false. So the first real
 		// error is the only one we care about.
+		// for _, val := range responses {
+		// 	fmt.Printf("Struct: %+v\n", val) // Prints field names and values
+		// }
 		return nil, err
 	case <-doneWaiting:
 		// No error was sent, success!

@@ -30,7 +30,6 @@ func main() {
 	if err != nil {
 		println(err.Error())
 	} else {
-		println(len(resAll))
 		for _, val := range resAll {
 			fmt.Printf("Struct: %+v\n", val) // Prints field names and values
 		}
